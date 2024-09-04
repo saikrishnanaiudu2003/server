@@ -28,6 +28,10 @@ mongoose.connect('mongodb+srv://contentmanagementsystem577:cms123@cms.9holq.mong
 app.use('/api/projects',projectRoutes)
 app.use('/api/component',componentRoutes)
 app.use('/api/subComponent',subComponentRoutes)
+
+app.get("/",(req,res)=>{
+    res.send("Api Working")
+})
 app.listen(5003, () => {
     console.log('Server is running on port 5000');
 });
