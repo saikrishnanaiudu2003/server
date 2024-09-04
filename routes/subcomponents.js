@@ -157,5 +157,71 @@ router.delete('/:id', async (req, res) => {
         res.status(500).json({ error: 'An error occurred while deleting the SubComponent' });
     }
 });
+
+router.get('/:componentId/all-images', async (req, res) => {
+    const { componentId } = req.params;
+ 
+    try {
+        // Fetch the component with its subcomponents
+        const component = await Component.findById(componentId).populate('subComponents');
+ 
+        if (!component) {
+            return res.status(404).json({ error: 'Component not found' });
+        }
+ 
+        // Collect images from the component itself and its subcomponents
+        const componentImages = component.images || [];
+        const subComponentImages = component.subComponents.reduce((images, subComponent) => {
+            if (subComponent.image) {
+                images.push(subComponent.image);
+            }
+            return images;
+        }, []);
+ 
+        // Combine all images
+        const allImages = [...componentImages, ...subComponentImages];
+ 
+        res.status(200).json({
+            name: component.name,
+            images: allImages
+        });
+    } catch (error) {
+        console.error('Error fetching all images:', error);
+        res.status(500).json({ error: 'An error occurred while fetching images' });
+    }
+});
+
+router.get('/images/:filename', (req, res) => {
+    const { filename } = req.params;
+    const bucket = new GridFSBucket(mongoose.connection.db, { bucketName: 'uploads' });
+    bucket.openDownloadStreamByName(filename).pipe(res);
+});
+
+router.get('/:id', async (req, res) => {
+    const { id } = req.params;
+ 
+    try {
+        // Fetch the project and populate components and subcomponents
+        const project = await Project.findById(id)
+            .populate({
+                path: 'components',
+                model: 'Component',
+                populate: {
+                    path: 'subComponents',
+                    model: 'SubComponent'
+                }
+            });
+ 
+        if (!project) {
+            return res.status(404).json({ error: 'Project not found' });
+        }
+ 
+        // Send the populated project data as a response
+        res.status(200).json({ project });
+    } catch (error) {
+        console.error('Error fetching project:', error);
+        res.status(500).json({ error: 'An error occurred while fetching the project' });
+    }
+});
  
 module.exports = router;
